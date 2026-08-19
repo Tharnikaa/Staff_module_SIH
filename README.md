@@ -66,7 +66,7 @@ Employs heuristic regex parsing to extract Account Number, Account Holder Name, 
 
 Captures voice directly in the browser using the HTML5 Web Speech API (ta-IN / en-IN), avoiding Python audio format mismatches (PCM WAV/WebM codec errors). Implements a handshake protocol (`streamlit:componentReady`, `setFrameHeight`, `setComponentValue`) to stream transcripts into backend session state.
 
-Bilingual Natural Language Parser extracts intents (Cash Deposit vs Cash Withdrawal) and converts spoken Tamil words ("ஐந்தாயிரம்", "பத்தாயிரம்", "ஒரு லட்சம்") or English numbers into integer amounts.
+Bilingual Natural Language Parser extracts intents (Cash Deposit or Cash Withdrawal) and converts spoken Tamil words ("ஐந்தாயிரம்", "பத்தாயிரம்", "ஒரு லட்சம்") or English numbers into integer amounts.
 
 ### 4. Privacy-by-Design TTS & Display
 
