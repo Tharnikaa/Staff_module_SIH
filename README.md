@@ -11,7 +11,7 @@ By combining Edge OCR, a Bi-directional Web Speech Engine (Tamil & English), 2FA
 ## Key Problems Solved
 
 - **Literacy & Language Barriers**: Eliminates manual paper pay-in/withdrawal slips through hands-free Tamil (ta-IN) and Indian English (en-IN) voice commands.
-- **Proxy Fraud & Security Vulnerabilities**: Prevents unauthorized slips by enforcing biometric identity verification (Fingerprint + Live Face Embedding 2FA) while keeping customer account numbers private.
+- **Proxy Fraud & Security Vulnerabilities**: Prevents unauthorized slips by enforcing biometric identity verification (Fingerprint authentication + Live Face Embedding 2FA) while keeping customer account numbers private.
 - **Branch Bottlenecks & Teller Errors**: Automatically encodes verified customer transactions into a 58mm thermal slip with a signed QR token, enabling tellers to decode and approve requests in a single camera scan.
 
 ## End-to-End System Workflow
