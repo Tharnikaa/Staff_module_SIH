@@ -24,6 +24,7 @@
 .scanner-container {
   width: 100%;
   aspect-ratio: 4/3;
+  max-height: 340px;
   background-color: #0A1118;
   border-radius: var(--radius-md);
   position: relative;
@@ -32,6 +33,30 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+#qr-reader-element video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+#qr-reader-element {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+}
+
+#qr-reader-element__scan_region {
+  background: transparent !important;
+}
+
+#qr-reader-element__dashboard {
+  display: none !important;
 }
 
 .scanner-video-element {
@@ -45,25 +70,55 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 210px;
-  height: 210px;
-  border: 1px dashed rgba(255, 255, 255, 0.4);
-  border-radius: var(--radius-sm);
+  width: 220px;
+  height: 220px;
+  max-width: 65%;
+  max-height: 65%;
+  border: 4px solid #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 10;
   box-sizing: border-box;
 }
 
 /* Four Corner Brackets */
 .corner-bracket {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-color: #38BDF8;
   border-style: solid;
+  z-index: 12;
 }
-.corner-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 4px; }
-.corner-tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-top-right-radius: 4px; }
-.corner-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-bottom-left-radius: 4px; }
-.corner-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-bottom-right-radius: 4px; }
+
+.corner-tl {
+  top: -6px;
+  left: -6px;
+  border-width: 4px 0 0 4px;
+  border-top-left-radius: 6px;
+}
+
+.corner-tr {
+  top: -6px;
+  right: -6px;
+  border-width: 4px 4px 0 0;
+  border-top-right-radius: 6px;
+}
+
+.corner-bl {
+  bottom: -6px;
+  left: -6px;
+  border-width: 0 0 4px 4px;
+  border-bottom-left-radius: 6px;
+}
+
+.corner-br {
+  bottom: -6px;
+  right: -6px;
+  border-width: 0 4px 4px 0;
+  border-bottom-right-radius: 6px;
+}
 
 /* Laser Scanner Line */
 .scan-line {
@@ -71,17 +126,17 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #38BDF8, transparent);
-  box-shadow: 0 0 10px #38BDF8;
-  animation: scanAnim 2.2s linear infinite;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.2), #38BDF8, rgba(56, 189, 248, 0.2));
+  box-shadow: 0 0 12px #38BDF8, 0 0 4px #FFFFFF;
+  animation: scanAnim 2.2s ease-in-out infinite alternate;
+  z-index: 11;
 }
 
 @keyframes scanAnim {
-  0% { top: 0%; opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
+  0% { top: 4%; opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { top: 94%; opacity: 0.8; }
 }
 
 /* Buttons */
