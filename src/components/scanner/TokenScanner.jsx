@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, CameraOff, RefreshCw, Upload, CheckCircle2 } from 'lucide-react';
+import { Camera, CameraOff, Upload, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 export const TokenScanner = ({ onScanSuccess, onScanError }) => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraState, setCameraState] = useState('CAMERA_READY'); // CAMERA_READY, SCANNING, ERROR
   const [errorMessage, setErrorMessage] = useState('');
+  const [uploadedFileName, setUploadedFileName] = useState('');
   const qrScannerRef = useRef(null);
 
   const startScanner = async () => {
@@ -17,20 +18,30 @@ export const TokenScanner = ({ onScanSuccess, onScanError }) => {
         qrScannerRef.current = new Html5Qrcode('qr-reader-element');
       }
 
+      const config = {
+        fps: 20,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.max(180, Math.floor(minDim * 0.75));
+          return { width: boxSize, height: boxSize };
+        },
+        aspectRatio: 1.0,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        }
+      };
+
       await qrScannerRef.current.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 220, height: 220 }
-        },
+        config,
         (decodedText) => {
           console.log('[QR Code Scanned]:', decodedText);
           if (onScanSuccess) {
             onScanSuccess(decodedText);
           }
         },
-        (errorMessage) => {
-          // ignore transient scan frame read failures
+        (scanError) => {
+          // ignore frame read failures
         }
       );
       setIsCameraActive(true);
@@ -38,7 +49,7 @@ export const TokenScanner = ({ onScanSuccess, onScanError }) => {
       console.error('[Camera Access Error]:', err);
       setCameraState('ERROR');
       setIsCameraActive(false);
-      setErrorMessage('Camera access unavailable or permission denied.');
+      setErrorMessage('Camera access unavailable or permission denied. Try uploading a QR image.');
       if (onScanError) onScanError(err);
     }
   };
@@ -59,12 +70,24 @@ export const TokenScanner = ({ onScanSuccess, onScanError }) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    setUploadedFileName(file.name);
+
     try {
-      const html5Qrcode = new Html5Qrcode('qr-reader-file-temp');
-      const result = await html5Qrcode.scanFile(file, true);
-      if (onScanSuccess) onScanSuccess(result);
+      // Create dedicated scanner instance for file scanning
+      const tempScanner = new Html5Qrcode('qr-reader-file-temp');
+      const decodedText = await tempScanner.scanFile(file, true);
+      console.log('[QR Image Upload Scanned]:', decodedText);
+
+      if (onScanSuccess) {
+        onScanSuccess(decodedText);
+      }
+      tempScanner.clear();
     } catch (err) {
-      alert('Could not decode QR code from selected image.');
+      console.error('[QR Image Decode Error]:', err);
+      alert('Could not decode QR code from selected image. Please ensure the image is clear and contains a valid QR code.');
+    } finally {
+      // Reset input value so same file can be re-uploaded if needed
+      e.target.value = '';
     }
   };
 
@@ -94,7 +117,7 @@ export const TokenScanner = ({ onScanSuccess, onScanError }) => {
         </span>
       </div>
       <div className="card-subtitle">
-        Position the customer QR token inside the frame to verify transaction HMAC signature.
+        Position the customer QR token inside the frame or upload an image to verify security signature.
       </div>
 
       <div className="scanner-container">
@@ -142,7 +165,7 @@ export const TokenScanner = ({ onScanSuccess, onScanError }) => {
 
         <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
           <Upload size={16} />
-          <span>Upload Image</span>
+          <span>{uploadedFileName ? `Re-upload (${uploadedFileName.slice(0, 12)}...)` : 'Upload Image'}</span>
           <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
         </label>
       </div>
