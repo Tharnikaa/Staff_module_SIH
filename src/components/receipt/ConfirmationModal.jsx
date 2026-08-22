@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatCurrency, maskCustomerId } from '../../utils/formatters';
-import { AlertTriangle, Check, X, Wallet, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, X, Wallet, Ban } from 'lucide-react';
 
 export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onCancelAndDelete, onConfirm }) => {
   if (!isOpen || !transactionData) return null;
@@ -108,10 +108,10 @@ export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onCancelA
                 color: '#DC2626',
                 border: '1px solid #FCA5A5'
               }}
-              title="Cancel transaction and permanently delete/invalidate this QR token"
+              title="Cancel transaction and permanently invalidate this QR token"
             >
-              <Trash2 size={16} />
-              <span>Cancel &amp; Delete QR</span>
+              <Ban size={16} />
+              <span>Cancel Transaction</span>
             </button>
           )}
 

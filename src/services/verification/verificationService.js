@@ -28,6 +28,8 @@ const KNOWN_ACCOUNT_BALANCES = {
   'VALID_HMAC_SIG_5590_WITHDRAW': 75000,
 };
 
+const CANCELLED_REGISTRY_KEY = 'nexa_cancelled_tokens';
+
 function _getRegistry() {
   try {
     return new Set(JSON.parse(sessionStorage.getItem(REGISTRY_KEY) || '[]'));
@@ -39,6 +41,22 @@ function _getRegistry() {
 function _saveRegistry(set) {
   try {
     sessionStorage.setItem(REGISTRY_KEY, JSON.stringify([...set]));
+  } catch {
+    // sessionStorage unavailable
+  }
+}
+
+function _getCancelledRegistry() {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem(CANCELLED_REGISTRY_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function _saveCancelledRegistry(set) {
+  try {
+    sessionStorage.setItem(CANCELLED_REGISTRY_KEY, JSON.stringify([...set]));
   } catch {
     // sessionStorage unavailable
   }
@@ -62,11 +80,36 @@ export function markTokenUsed(data) {
 }
 
 /**
+ * Called when staff cancels a transaction.
+ * Marks token_id and signature as cancelled so re-scanning returns INVALID.
+ */
+export function markTokenCancelled(data) {
+  if (!data) return;
+  const registry = _getCancelledRegistry();
+
+  if (typeof data === 'string') {
+    registry.add(String(data));
+  } else if (typeof data === 'object') {
+    if (data.token_id) registry.add(String(data.token_id));
+    if (data.token) registry.add(String(data.token));
+  }
+  _saveCancelledRegistry(registry);
+}
+
+/**
  * Returns true if the token or token_id has already been spent.
  */
 export function isTokenUsed(token_id) {
   if (!token_id) return false;
   return _getRegistry().has(String(token_id));
+}
+
+/**
+ * Returns true if the token or token_id has been cancelled.
+ */
+export function isTokenCancelled(token_id) {
+  if (!token_id) return false;
+  return _getCancelledRegistry().has(String(token_id));
 }
 
 export async function verifyToken(scannedPayload) {
@@ -91,6 +134,21 @@ export async function verifyToken(scannedPayload) {
     const token_id = payload.token_id || (tokenStr.startsWith('TXN-') ? tokenStr : `TXN-2026-${(tokenStr.match(/\d+/) || ['4821'])[0]}`);
 
     const registry = _getRegistry();
+    const cancelledRegistry = _getCancelledRegistry();
+
+    // ── CANCELLED TOKEN CHECK (returns INVALID) ───────────────────────────
+    if (
+      cancelledRegistry.has(String(token_id)) ||
+      cancelledRegistry.has(String(tokenStr)) ||
+      (payload.token && cancelledRegistry.has(String(payload.token))) ||
+      cancelledRegistry.has(String(rawStr))
+    ) {
+      return {
+        status: 'INVALID',
+        message: 'This transaction was cancelled by staff. The QR token is invalid and cannot be processed.',
+        token_id
+      };
+    }
 
     // ── ONE-TIME USE CHECK (highest priority) ─────────────────────────────
     // Check if token_id, token string, or raw string has been marked as used in sessionStorage

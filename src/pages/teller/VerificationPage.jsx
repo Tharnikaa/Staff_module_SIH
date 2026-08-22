@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQueue } from '../../state/QueueContext';
-import { verifyToken, markTokenUsed } from '../../services/verification/verificationService';
+import { verifyToken, markTokenUsed, markTokenCancelled } from '../../services/verification/verificationService';
 import { TokenScanner } from '../../components/scanner/TokenScanner';
 import { VerificationPanel } from '../../components/verification/VerificationPanel';
 import { SecurityStatusCard } from '../../components/verification/SecurityStatusCard';
@@ -108,11 +108,11 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
 
     const cancelledTokenId = verifiedData.token_id;
 
-    // 1. Mark token as spent/cancelled in sessionStorage registry so scanning it again shows ALREADY_USED
-    markTokenUsed(verifiedData);
+    // 1. Mark token as cancelled in sessionStorage registry so scanning it again returns status: 'INVALID'
+    markTokenCancelled(verifiedData);
 
     // 2. Add Audit log entry
-    addAuditLog('Transaction Cancelled', `Transaction ${cancelledTokenId} cancelled by teller ST-042. QR token permanently deleted & invalidated.`);
+    addAuditLog('Transaction Cancelled', `Transaction ${cancelledTokenId} cancelled by teller ST-042. QR token permanently cancelled & invalidated.`);
 
     // 3. Emit Dev Event / WS event so queue entry is removed/expired
     await wsClient.emitDevEvent({

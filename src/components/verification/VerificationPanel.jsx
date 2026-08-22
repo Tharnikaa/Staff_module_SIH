@@ -292,8 +292,8 @@ export const VerificationPanel = ({
               }}
               title="Cancel transaction and permanently invalidate this QR token"
             >
-              <Trash2 size={16} />
-              <span>Cancel &amp; Delete QR</span>
+              <Ban size={16} />
+              <span>Cancel Transaction</span>
             </button>
 
             <button
