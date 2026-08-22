@@ -17,7 +17,7 @@ export const VerificationPanel = ({
     : null;
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '430px' }}>
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
       <div>
         <div className="card-title flex items-center justify-between">
           <span>Verification Workspace</span>
