@@ -13,26 +13,44 @@
  */
 
 /**
- * Module-level registry of spent token IDs.
- * In production this lives server-side; here it persists for the full browser session.
+ * Persistent registry of spent token IDs — stored in sessionStorage so it
+ * survives Vite HMR reloads (which re-execute the module and reset in-memory Sets).
+ * Cleared automatically when the browser tab/session closes.
  */
-const _usedTokenRegistry = new Set();
+const REGISTRY_KEY = 'nexa_used_tokens';
+
+function _getRegistry() {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem(REGISTRY_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function _saveRegistry(set) {
+  try {
+    sessionStorage.setItem(REGISTRY_KEY, JSON.stringify([...set]));
+  } catch {
+    // sessionStorage unavailable — silently ignore
+  }
+}
 
 /**
  * Called by VerificationPage AFTER staff confirms a transaction.
  * Marks the token as spent so any future scan of the same QR is rejected.
  */
 export function markTokenUsed(token_id) {
-  if (token_id) {
-    _usedTokenRegistry.add(String(token_id));
-  }
+  if (!token_id) return;
+  const registry = _getRegistry();
+  registry.add(String(token_id));
+  _saveRegistry(registry);
 }
 
 /**
  * Returns true if the token_id has already been spent this session.
  */
 export function isTokenUsed(token_id) {
-  return token_id ? _usedTokenRegistry.has(String(token_id)) : false;
+  return token_id ? _getRegistry().has(String(token_id)) : false;
 }
 
 export async function verifyToken(scannedPayload) {
@@ -54,8 +72,8 @@ export async function verifyToken(scannedPayload) {
     const token_id = payload.token_id || tokenStr;
 
     // ── ONE-TIME USE CHECK (highest priority) ─────────────────────────────
-    // If this token was already confirmed by staff this session → reject immediately.
-    if (_usedTokenRegistry.has(String(token_id))) {
+    // Check sessionStorage registry — survives HMR reloads unlike in-memory Set.
+    if (_getRegistry().has(String(token_id))) {
       return {
         status: 'ALREADY_USED',
         message: 'This QR token has already been scanned and the transaction completed. One-time use tokens cannot be reused.',
