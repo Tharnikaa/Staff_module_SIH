@@ -17,6 +17,7 @@ const initialSeedQueue = {
     customer_display_name: 'Customer #8821',
     transaction_type: 'withdraw',
     amount: 100000,
+    account_balance: 285000,
     queue_position: 1,
     issued_at: new Date(Date.now() - 15 * 60000).toISOString(),
     ui_status: 'WAITING'
@@ -26,6 +27,7 @@ const initialSeedQueue = {
     customer_display_name: 'Customer #3277',
     transaction_type: 'transfer',
     amount: 50000,
+    account_balance: 192500,
     queue_position: 2,
     issued_at: new Date(Date.now() - 10 * 60000).toISOString(),
     ui_status: 'WAITING'
@@ -35,6 +37,7 @@ const initialSeedQueue = {
     customer_display_name: 'Customer #1104',
     transaction_type: 'deposit',
     amount: 25000,
+    account_balance: 48000,
     queue_position: 3,
     issued_at: new Date(Date.now() - 5 * 60000).toISOString(),
     ui_status: 'WAITING'
@@ -44,6 +47,7 @@ const initialSeedQueue = {
     customer_display_name: 'Customer #5590',
     transaction_type: 'document_collection',
     amount: 0,
+    account_balance: 134000,
     queue_position: 4,
     issued_at: new Date(Date.now() - 2 * 60000).toISOString(),
     ui_status: 'WAITING'

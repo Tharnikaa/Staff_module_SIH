@@ -200,7 +200,7 @@ export const VerificationPanel = ({
           </div>
         )}
 
-        {/* State 4: INVALID / EXPIRED — INSUFFICIENT_FUNDS is handled inline in VERIFIED */}}
+        {/* State 4: ALREADY_USED — one-time token spent */}
         {verificationState === 'ALREADY_USED' && (
           <div style={{ animation: 'fadeIn 0.25s ease' }}>
             <div

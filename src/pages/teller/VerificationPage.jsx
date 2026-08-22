@@ -34,11 +34,12 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
 
       const matchingQueue = {
         token_id: result.token_id || existingInQueue?.token_id || `TXN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        token: result.token || existingInQueue?.token,
         customer_display_name: result.customer_display_name || existingInQueue?.customer_display_name || `Customer #${(result.token_id || '4821').slice(-4)}`,
         transaction_type: result.transaction_type || existingInQueue?.transaction_type || 'withdraw',
         amount: result.amount !== undefined ? result.amount : (existingInQueue?.amount !== undefined ? existingInQueue.amount : 5000),
         // account_balance is bank-internal only — never forwarded to receipt
-        account_balance: result.account_balance,
+        account_balance: result.account_balance !== undefined ? result.account_balance : (existingInQueue?.account_balance || 150000),
         // Do NOT default to 1 — let QueueContext's nextPosition() assign a proper unique number
         queue_position: result.queue_position || existingInQueue?.queue_position || undefined
       };
@@ -90,7 +91,7 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
     await wsClient.emitDevEvent(eventPayload);
 
     // Mark the token as spent — any future scan of the same QR will be rejected as ALREADY_USED
-    markTokenUsed(verifiedData.token_id);
+    markTokenUsed(verifiedData);
     addAuditLog('Staff Confirmed', `Transaction ${verifiedData.token_id} authorized by Teller ST-042. Token invalidated for reuse.`);
 
     // Explicitly strip account_balance — it is bank-internal and must NEVER appear on the customer receipt
