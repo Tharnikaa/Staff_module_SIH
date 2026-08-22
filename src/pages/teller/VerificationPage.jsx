@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQueue } from '../../state/QueueContext';
-import { verifyToken } from '../../services/verification/verificationService';
+import { verifyToken, markTokenUsed } from '../../services/verification/verificationService';
 import { TokenScanner } from '../../components/scanner/TokenScanner';
 import { VerificationPanel } from '../../components/verification/VerificationPanel';
 import { SecurityStatusCard } from '../../components/verification/SecurityStatusCard';
@@ -100,7 +100,9 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
     }
     await wsClient.emitDevEvent(eventPayload);
 
-    addAuditLog('Staff Confirmed', `Transaction ${verifiedData.token_id} authorized by Teller ST-042.`);
+    // Mark the token as spent — any future scan of the same QR will be rejected as ALREADY_USED
+    markTokenUsed(verifiedData.token_id);
+    addAuditLog('Staff Confirmed', `Transaction ${verifiedData.token_id} authorized by Teller ST-042. Token invalidated for reuse.`);
 
     // Explicitly strip account_balance — it is bank-internal and must NEVER appear on the customer receipt
     // eslint-disable-next-line no-unused-vars

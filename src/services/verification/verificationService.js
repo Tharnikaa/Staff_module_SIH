@@ -5,8 +5,35 @@
  * The frontend NEVER performs local HMAC signature verification or stores secret HMAC keys.
  * All scanned tokens are passed directly to this service layer.
  * 
+ * ONE-TIME USE ENFORCEMENT:
+ * Once a token is confirmed by staff (markTokenUsed), any subsequent scan of the same
+ * token_id is immediately rejected as ALREADY_USED — across the entire session.
+ * 
  * TODO: Backend team must provide verification endpoint contract.
  */
+
+/**
+ * Module-level registry of spent token IDs.
+ * In production this lives server-side; here it persists for the full browser session.
+ */
+const _usedTokenRegistry = new Set();
+
+/**
+ * Called by VerificationPage AFTER staff confirms a transaction.
+ * Marks the token as spent so any future scan of the same QR is rejected.
+ */
+export function markTokenUsed(token_id) {
+  if (token_id) {
+    _usedTokenRegistry.add(String(token_id));
+  }
+}
+
+/**
+ * Returns true if the token_id has already been spent this session.
+ */
+export function isTokenUsed(token_id) {
+  return token_id ? _usedTokenRegistry.has(String(token_id)) : false;
+}
 
 export async function verifyToken(scannedPayload) {
   // Simulate network latency for backend HMAC validation (600ms - 1000ms)
@@ -24,6 +51,17 @@ export async function verifyToken(scannedPayload) {
     }
 
     const tokenStr = payload.token || payload.token_id || String(scannedPayload);
+    const token_id = payload.token_id || tokenStr;
+
+    // ── ONE-TIME USE CHECK (highest priority) ─────────────────────────────
+    // If this token was already confirmed by staff this session → reject immediately.
+    if (_usedTokenRegistry.has(String(token_id))) {
+      return {
+        status: 'ALREADY_USED',
+        message: 'This QR token has already been scanned and the transaction completed. One-time use tokens cannot be reused.',
+        token_id
+      };
+    }
 
     // Mock Backend HMAC verification rules for prototype testing:
     if (tokenStr.includes('EXPIRED')) {
@@ -63,7 +101,7 @@ export async function verifyToken(scannedPayload) {
       return {
         status: 'INSUFFICIENT_FUNDS',
         message: `Withdrawal amount ${amount} exceeds available balance of ${account_balance}. Transaction blocked.`,
-        token_id: payload.token_id || tokenStr,
+        token_id,
         customer_display_name: payload.customer_display_name,
         transaction_type,
         amount,
@@ -75,7 +113,7 @@ export async function verifyToken(scannedPayload) {
     return {
       status: 'VERIFIED',
       verified_at: new Date().toISOString(),
-      token_id: payload.token_id || tokenStr,
+      token_id,
       customer_display_name: payload.customer_display_name,
       transaction_type,
       amount,

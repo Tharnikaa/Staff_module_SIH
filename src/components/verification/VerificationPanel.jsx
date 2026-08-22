@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatCurrency, maskCustomerId, formatDateTime } from '../../utils/formatters';
-import { ShieldCheck, ShieldAlert, CheckCircle2, AlertCircle, Lock, Loader2, ArrowRight, Wallet, Ban } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, AlertCircle, Lock, Loader2, ArrowRight, Wallet, Ban, ScanLine } from 'lucide-react';
 
 export const VerificationPanel = ({ 
   verificationState, // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED, INSUFFICIENT_FUNDS
@@ -240,8 +240,48 @@ export const VerificationPanel = ({
           </div>
         )}
 
-        {/* State 5: INVALID / EXPIRED / ALREADY_USED */}
-        {(verificationState === 'INVALID' || verificationState === 'EXPIRED' || verificationState === 'ALREADY_USED') && (
+        {/* State 5a: ALREADY_USED — one-time token already spent */}
+        {verificationState === 'ALREADY_USED' && (
+          <div style={{ animation: 'fadeIn 0.25s ease' }}>
+            <div
+              style={{
+                backgroundColor: '#F5F3FF',
+                border: '1.5px solid #C4B5FD',
+                borderRadius: 'var(--radius-sm)',
+                padding: '1rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem'
+              }}
+            >
+              <ScanLine size={24} style={{ color: '#7C3AED', flexShrink: 0, marginTop: '0.1rem' }} />
+              <div>
+                <div style={{ fontWeight: 700, color: '#4C1D95', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
+                  ✕ QR ALREADY USED — ONE-TIME TOKEN SPENT
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#6D28D9' }}>
+                  This QR token was already scanned and the transaction completed in this session. One-time tokens are invalidated immediately after staff confirmation and cannot be reused.
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                backgroundColor: '#FAFAFA',
+                border: '1px solid #E2E8F0',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.75rem 1rem',
+                fontSize: '0.8rem',
+                color: '#64748B'
+              }}
+            >
+              <strong style={{ color: '#17212B' }}>Action required:</strong> Ask the customer to request a fresh QR token from the kiosk. This token ID is permanently invalidated for this session.
+            </div>
+          </div>
+        )}
+
+        {/* State 5b: INVALID / EXPIRED */}
+        {(verificationState === 'INVALID' || verificationState === 'EXPIRED') && (
           <div>
             <div 
               style={{ 
@@ -263,8 +303,6 @@ export const VerificationPanel = ({
                 <div style={{ fontSize: '0.82rem', color: '#B91C1C' }}>
                   {verificationState === 'EXPIRED' 
                     ? 'Security token has expired. Request customer to generate a fresh QR token.' 
-                    : verificationState === 'ALREADY_USED'
-                    ? 'This transaction token has already been completed.'
                     : 'Invalid security signature or tampered HMAC token.'}
                 </div>
               </div>
