@@ -1,0 +1,138 @@
+import React, { useState, useEffect } from 'react';
+import { useQueue } from '../../state/QueueContext';
+import { verifyToken } from '../../services/verification/verificationService';
+import { TokenScanner } from '../../components/scanner/TokenScanner';
+import { VerificationPanel } from '../../components/verification/VerificationPanel';
+import { SecurityStatusCard } from '../../components/verification/SecurityStatusCard';
+import { ConfirmationModal } from '../../components/receipt/ConfirmationModal';
+import { ReceiptPreviewModal } from '../../components/receipt/ReceiptPreviewModal';
+import { QueueCalledAlert } from '../../components/queue/QueueCalledAlert';
+import { wsClient } from '../../services/websocket/wsClient';
+
+export const VerificationPage = ({ simulatedQrPayload }) => {
+  const { queueMap, addAuditLog } = useQueue();
+  const [verificationState, setVerificationState] = useState('READY'); // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED
+  const [activePayload, setActivePayload] = useState(null);
+  const [verifiedData, setVerifiedData] = useState(null);
+  const [lastVerifiedTime, setLastVerifiedTime] = useState('');
+
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [completedReceiptData, setCompletedReceiptData] = useState(null);
+
+  const handleScanSuccess = async (scannedRawText) => {
+    if (!scannedRawText) return;
+    setVerificationState('VERIFYING');
+    addAuditLog('QR Scanned', `Scanned raw token payload: ${scannedRawText.slice(0, 25)}...`);
+
+    const result = await verifyToken(scannedRawText);
+
+    if (result.status === 'VERIFIED') {
+      const existingInQueue = Object.values(queueMap).find(
+        (q) => q.token_id === result.token_id
+      );
+
+      const matchingQueue = {
+        token_id: result.token_id || existingInQueue?.token_id || `TXN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        customer_display_name: result.customer_display_name || existingInQueue?.customer_display_name || `Customer #${(result.token_id || '4821').slice(-4)}`,
+        transaction_type: result.transaction_type || existingInQueue?.transaction_type || 'withdraw',
+        amount: result.amount !== undefined ? result.amount : (existingInQueue?.amount !== undefined ? existingInQueue.amount : 5000),
+        // Do NOT default to 1 — let QueueContext's nextPosition() assign a proper unique number
+        queue_position: result.queue_position || existingInQueue?.queue_position || undefined
+      };
+
+      setVerifiedData(matchingQueue);
+      setVerificationState('VERIFIED');
+      setLastVerifiedTime(new Date().toLocaleTimeString());
+      addAuditLog('Token Verified', `HMAC verified signature for token ${matchingQueue.token_id}`);
+    } else {
+      setVerificationState(result.status);
+      addAuditLog('Verification Failed', result.message || 'Invalid or expired token.');
+
+      if (result.status === 'EXPIRED' && result.token_id) {
+        wsClient.emitDevEvent({
+          event: 'token_expired',
+          token_id: result.token_id
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (simulatedQrPayload) {
+      handleScanSuccess(simulatedQrPayload);
+    }
+  }, [simulatedQrPayload]);
+
+  const handleSelectFromQueueAlert = (queueEntry) => {
+    handleScanSuccess(JSON.stringify({ token_id: queueEntry.token_id, token: 'VALID_HMAC_SIG' }));
+  };
+
+  const handleConfirmTransaction = async () => {
+    setIsConfirmModalOpen(false);
+
+    if (!verifiedData) return;
+
+    // Emit transaction_completed event via WS with full details so QueueContext updates ledger/receipts/dashboard
+    // Omit queue_position if unknown — QueueContext will assign the correct next position
+    const eventPayload = {
+      event: 'transaction_completed',
+      token_id: verifiedData.token_id,
+      customer_display_name: verifiedData.customer_display_name,
+      transaction_type: verifiedData.transaction_type,
+      amount: verifiedData.amount,
+    };
+    if (verifiedData.queue_position) {
+      eventPayload.queue_position = verifiedData.queue_position;
+    }
+    await wsClient.emitDevEvent(eventPayload);
+
+    addAuditLog('Staff Confirmed', `Transaction ${verifiedData.token_id} authorized by Teller ST-042.`);
+
+    setCompletedReceiptData(verifiedData);
+    setIsReceiptModalOpen(true);
+    setVerificationState('READY');
+    setVerifiedData(null);
+  };
+
+  return (
+    <div>
+      <QueueCalledAlert onProceedToVerification={handleSelectFromQueueAlert} />
+
+      <div className="verification-grid">
+        <TokenScanner 
+          onScanSuccess={handleScanSuccess} 
+          onScanError={(err) => addAuditLog('Camera Error', err.message)} 
+        />
+
+        <VerificationPanel 
+          verificationState={verificationState}
+          verifiedData={verifiedData}
+          onConfirmClick={() => setIsConfirmModalOpen(true)}
+          onResetScan={() => {
+            setVerificationState('READY');
+            setVerifiedData(null);
+          }}
+        />
+      </div>
+
+      <SecurityStatusCard 
+        lastVerifiedTime={lastVerifiedTime}
+        isTokenVerified={verificationState === 'VERIFIED'}
+      />
+
+      <ConfirmationModal 
+        isOpen={isConfirmModalOpen}
+        transactionData={verifiedData}
+        onCancel={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleConfirmTransaction}
+      />
+
+      <ReceiptPreviewModal 
+        isOpen={isReceiptModalOpen}
+        receiptData={completedReceiptData}
+        onClose={() => setIsReceiptModalOpen(false)}
+      />
+    </div>
+  );
+};
