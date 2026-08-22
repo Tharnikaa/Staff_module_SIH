@@ -1,9 +1,15 @@
 import React from 'react';
 import { formatCurrency, maskCustomerId } from '../../utils/formatters';
-import { AlertTriangle, Check, X } from 'lucide-react';
+import { AlertTriangle, Check, X, Wallet } from 'lucide-react';
 
 export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onConfirm }) => {
   if (!isOpen || !transactionData) return null;
+
+  const isWithdrawal = transactionData.transaction_type?.toLowerCase() === 'withdraw';
+  const hasBalance = transactionData.account_balance !== undefined && transactionData.account_balance !== null;
+  const remainingAfter = hasBalance && isWithdrawal
+    ? transactionData.account_balance - transactionData.amount
+    : null;
 
   return (
     <div className="modal-overlay">
@@ -52,10 +58,38 @@ export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onConfirm
               <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{transactionData.transaction_type}</span>
             </div>
 
-            <div className="flex justify-between" style={{ paddingBottom: '0.25rem' }}>
+            <div className="flex justify-between" style={{ borderBottom: hasBalance ? '1px solid #E2E8F0' : 'none', paddingBottom: hasBalance ? '0.5rem' : '0.25rem' }}>
               <span style={{ color: '#64748B' }}>Amount:</span>
               <span style={{ fontWeight: 700, color: '#12355B', fontSize: '1.1rem' }}>{formatCurrency(transactionData.amount)}</span>
             </div>
+
+            {/* ── BANK-INTERNAL: Account Balance ─── Never printed on customer receipt ── */}
+            {hasBalance && (
+              <div
+                style={{
+                  backgroundColor: '#EFF6FF',
+                  border: '1.5px solid #BFDBFE',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.75rem 1rem',
+                  marginTop: '0.25rem'
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', color: '#1D4ED8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Wallet size={13} />
+                  Bank-Internal · Not Printed on Receipt
+                </div>
+                <div className="flex justify-between" style={{ marginBottom: '0.3rem' }}>
+                  <span style={{ color: '#1E40AF', fontWeight: 500 }}>Available Balance:</span>
+                  <span style={{ fontWeight: 800, color: '#1D4ED8' }}>{formatCurrency(transactionData.account_balance)}</span>
+                </div>
+                {isWithdrawal && remainingAfter !== null && (
+                  <div className="flex justify-between">
+                    <span style={{ color: '#15803D', fontWeight: 500 }}>Balance After Withdrawal:</span>
+                    <span style={{ fontWeight: 700, color: '#15803D' }}>{formatCurrency(remainingAfter)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -66,7 +100,7 @@ export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onConfirm
           </button>
           <button className="btn btn-success" onClick={onConfirm}>
             <Check size={16} />
-            <span>Confirm & Complete</span>
+            <span>Confirm &amp; Complete</span>
           </button>
         </div>
       </div>

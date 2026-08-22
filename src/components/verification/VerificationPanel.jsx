@@ -1,13 +1,19 @@
 import React from 'react';
 import { formatCurrency, maskCustomerId, formatDateTime } from '../../utils/formatters';
-import { ShieldCheck, ShieldAlert, CheckCircle2, AlertCircle, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, AlertCircle, Lock, Loader2, ArrowRight, Wallet, Ban } from 'lucide-react';
 
 export const VerificationPanel = ({ 
-  verificationState, // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED
+  verificationState, // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED, INSUFFICIENT_FUNDS
   verifiedData, 
   onConfirmClick,
   onResetScan
 }) => {
+  const isWithdrawal = verifiedData?.transaction_type?.toLowerCase() === 'withdraw';
+  const hasBalance = verifiedData?.account_balance !== undefined && verifiedData?.account_balance !== null;
+  const shortfall = hasBalance && isWithdrawal
+    ? verifiedData.account_balance - verifiedData.amount
+    : null;
+
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '430px' }}>
       <div>
@@ -109,7 +115,7 @@ export const VerificationPanel = ({
 
               <div>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
-                  Amount
+                  Amount Requested
                 </div>
                 <div style={{ fontWeight: 700, color: '#12355B', fontSize: '1.1rem' }}>
                   {formatCurrency(verifiedData.amount)}
@@ -126,6 +132,42 @@ export const VerificationPanel = ({
               </div>
             </div>
 
+            {/* ── BANK-INTERNAL: Account Balance ─────────────────────── */}
+            {hasBalance && (
+              <div
+                style={{
+                  backgroundColor: '#EFF6FF',
+                  border: '1.5px solid #BFDBFE',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.8rem 1rem',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}
+              >
+                <Wallet size={20} style={{ color: '#2563EB', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.72rem', color: '#1D4ED8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+                    🔒 Bank-Internal · Not on Customer Receipt
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#1E40AF', fontWeight: 600 }}>
+                      Available Balance
+                    </span>
+                    <span style={{ fontWeight: 800, color: '#1D4ED8', fontSize: '1.05rem' }}>
+                      {formatCurrency(verifiedData.account_balance)}
+                    </span>
+                  </div>
+                  {isWithdrawal && shortfall !== null && (
+                    <div style={{ fontSize: '0.78rem', color: '#15803D', marginTop: '0.2rem' }}>
+                      Remaining after withdrawal: <strong>{formatCurrency(shortfall)}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div style={{ fontSize: '0.78rem', color: '#64748B', borderTop: '1px solid #E2E8F0', paddingTop: '0.85rem', marginBottom: '1.25rem' }}>
               <div>Token ID: <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#17212B' }}>{verifiedData.token_id}</span></div>
               <div>Verified: {formatDateTime(new Date().toISOString())}</div>
@@ -133,7 +175,72 @@ export const VerificationPanel = ({
           </div>
         )}
 
-        {/* State 4: INVALID / EXPIRED / ALREADY_USED */}
+        {/* State 4: INSUFFICIENT_FUNDS */}
+        {verificationState === 'INSUFFICIENT_FUNDS' && verifiedData && (
+          <div style={{ animation: 'fadeIn 0.25s ease' }}>
+            <div
+              style={{
+                backgroundColor: '#FFF7ED',
+                border: '1.5px solid #FED7AA',
+                borderRadius: 'var(--radius-sm)',
+                padding: '1rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem'
+              }}
+            >
+              <Ban size={24} style={{ color: '#EA580C', flexShrink: 0, marginTop: '0.1rem' }} />
+              <div>
+                <div style={{ fontWeight: 700, color: '#9A3412', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
+                  ✕ WITHDRAWAL BLOCKED — INSUFFICIENT FUNDS
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#C2410C' }}>
+                  The requested withdrawal exceeds the customer's available balance. Transaction cannot be authorized.
+                </div>
+              </div>
+            </div>
+
+            {/* Balance breakdown — bank-internal, never printed */}
+            <div
+              style={{
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.85rem 1rem',
+                marginBottom: '1.25rem',
+                fontSize: '0.88rem'
+              }}
+            >
+              <div style={{ fontSize: '0.7rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.6rem' }}>
+                🔒 Bank-Internal Balance Details
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>Withdrawal Requested:</span>
+                  <span style={{ fontWeight: 700, color: '#DC2626' }}>{formatCurrency(verifiedData.amount)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>Available Balance:</span>
+                  <span style={{ fontWeight: 700, color: '#17212B' }}>{formatCurrency(verifiedData.account_balance)}</span>
+                </div>
+                <div style={{ borderTop: '1px solid #FCA5A5', paddingTop: '0.4rem', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>Shortfall:</span>
+                  <span style={{ fontWeight: 800, color: '#DC2626' }}>
+                    {formatCurrency(verifiedData.amount - verifiedData.account_balance)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+              <div>Customer: <strong>{maskCustomerId(verifiedData.customer_display_name)}</strong></div>
+              <div>Transaction: <strong style={{ textTransform: 'capitalize' }}>{verifiedData.transaction_type}</strong></div>
+            </div>
+          </div>
+        )}
+
+        {/* State 5: INVALID / EXPIRED / ALREADY_USED */}
         {(verificationState === 'INVALID' || verificationState === 'EXPIRED' || verificationState === 'ALREADY_USED') && (
           <div>
             <div 
@@ -168,7 +275,7 @@ export const VerificationPanel = ({
 
       {/* Action Footer */}
       <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-        {(verificationState === 'INVALID' || verificationState === 'EXPIRED' || verificationState === 'ALREADY_USED' || verificationState === 'VERIFIED') && (
+        {(verificationState === 'INVALID' || verificationState === 'EXPIRED' || verificationState === 'ALREADY_USED' || verificationState === 'VERIFIED' || verificationState === 'INSUFFICIENT_FUNDS') && (
           <button className="btn btn-secondary" onClick={onResetScan}>
             Scan Again
           </button>

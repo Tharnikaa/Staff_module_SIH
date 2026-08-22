@@ -47,14 +47,39 @@ export async function verifyToken(scannedPayload) {
       };
     }
 
+    // Extract account balance (bank-internal field — never printed on customer receipt)
+    const account_balance = payload.account_balance !== undefined ? Number(payload.account_balance) : undefined;
+    const transaction_type = payload.transaction_type;
+    const amount = payload.amount !== undefined ? Number(payload.amount) : undefined;
+
+    // Withdrawal guard: reject if requested amount exceeds current account balance
+    if (
+      transaction_type &&
+      transaction_type.toLowerCase() === 'withdraw' &&
+      account_balance !== undefined &&
+      amount !== undefined &&
+      amount > account_balance
+    ) {
+      return {
+        status: 'INSUFFICIENT_FUNDS',
+        message: `Withdrawal amount ${amount} exceeds available balance of ${account_balance}. Transaction blocked.`,
+        token_id: payload.token_id || tokenStr,
+        customer_display_name: payload.customer_display_name,
+        transaction_type,
+        amount,
+        account_balance
+      };
+    }
+
     // Default Success Verification
     return {
       status: 'VERIFIED',
       verified_at: new Date().toISOString(),
       token_id: payload.token_id || tokenStr,
       customer_display_name: payload.customer_display_name,
-      transaction_type: payload.transaction_type,
-      amount: payload.amount,
+      transaction_type,
+      amount,
+      account_balance, // bank-internal field
       queue_position: payload.queue_position,
       signature_valid: true,
       hmac_verified: true,

@@ -152,23 +152,30 @@ export const DevControlDrawer = ({ onSimulateQrScan }) => {
               <button 
                 className="btn btn-secondary" 
                 style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', justifyContent: 'flex-start' }}
-                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_8821', token_id: 'TXN-2026-008821', customer_display_name: 'Customer #8821', transaction_type: 'withdraw', amount: 100000 }))}
+                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_8821', token_id: 'TXN-2026-008821', customer_display_name: 'Customer #8821', transaction_type: 'withdraw', amount: 100000, account_balance: 285000 }))}
               >
-                ✓ Customer #8821 – Withdraw
+                ✓ Customer #8821 – Withdraw (Bal: ₹2,85,000)
               </button>
               <button 
                 className="btn btn-secondary" 
                 style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', justifyContent: 'flex-start' }}
-                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_3277', token_id: 'TXN-2026-003277', customer_display_name: 'Customer #3277', transaction_type: 'transfer', amount: 50000 }))}
+                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_3277', token_id: 'TXN-2026-003277', customer_display_name: 'Customer #3277', transaction_type: 'transfer', amount: 50000, account_balance: 192500 }))}
               >
-                ✓ Customer #3277 – Transfer
+                ✓ Customer #3277 – Transfer (Bal: ₹1,92,500)
               </button>
               <button 
                 className="btn btn-secondary" 
                 style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', justifyContent: 'flex-start' }}
-                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_1104', token_id: 'TXN-2026-001104', customer_display_name: 'Customer #1104', transaction_type: 'deposit', amount: 25000 }))}
+                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_1104', token_id: 'TXN-2026-001104', customer_display_name: 'Customer #1104', transaction_type: 'deposit', amount: 25000, account_balance: 48000 }))}
               >
-                ✓ Customer #1104 – Deposit
+                ✓ Customer #1104 – Deposit (Bal: ₹48,000)
+              </button>
+              <button 
+                className="btn btn-secondary" 
+                style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', justifyContent: 'flex-start', color: '#EA580C' }}
+                onClick={() => onSimulateQrScan && onSimulateQrScan(JSON.stringify({ token: 'VALID_HMAC_SIG_5590', token_id: 'TXN-2026-005590', customer_display_name: 'Customer #5590', transaction_type: 'withdraw', amount: 150000, account_balance: 75000 }))}
+              >
+                ⚠ Customer #5590 – Insufficient Funds (₹1,50,000 &gt; ₹75,000)
               </button>
               <button 
                 className="btn btn-secondary" 

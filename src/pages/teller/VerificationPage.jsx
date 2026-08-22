@@ -11,7 +11,7 @@ import { wsClient } from '../../services/websocket/wsClient';
 
 export const VerificationPage = ({ simulatedQrPayload }) => {
   const { queueMap, addAuditLog } = useQueue();
-  const [verificationState, setVerificationState] = useState('READY'); // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED
+  const [verificationState, setVerificationState] = useState('READY'); // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED, INSUFFICIENT_FUNDS
   const [activePayload, setActivePayload] = useState(null);
   const [verifiedData, setVerifiedData] = useState(null);
   const [lastVerifiedTime, setLastVerifiedTime] = useState('');
@@ -37,6 +37,8 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
         customer_display_name: result.customer_display_name || existingInQueue?.customer_display_name || `Customer #${(result.token_id || '4821').slice(-4)}`,
         transaction_type: result.transaction_type || existingInQueue?.transaction_type || 'withdraw',
         amount: result.amount !== undefined ? result.amount : (existingInQueue?.amount !== undefined ? existingInQueue.amount : 5000),
+        // account_balance is bank-internal only — never forwarded to receipt
+        account_balance: result.account_balance,
         // Do NOT default to 1 — let QueueContext's nextPosition() assign a proper unique number
         queue_position: result.queue_position || existingInQueue?.queue_position || undefined
       };
@@ -45,6 +47,17 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
       setVerificationState('VERIFIED');
       setLastVerifiedTime(new Date().toLocaleTimeString());
       addAuditLog('Token Verified', `HMAC verified signature for token ${matchingQueue.token_id}`);
+    } else if (result.status === 'INSUFFICIENT_FUNDS') {
+      // Set verified data so VerificationPanel can display balance details
+      setVerifiedData({
+        token_id: result.token_id,
+        customer_display_name: result.customer_display_name,
+        transaction_type: result.transaction_type,
+        amount: result.amount,
+        account_balance: result.account_balance
+      });
+      setVerificationState('INSUFFICIENT_FUNDS');
+      addAuditLog('Withdrawal Blocked', result.message);
     } else {
       setVerificationState(result.status);
       addAuditLog('Verification Failed', result.message || 'Invalid or expired token.');
@@ -89,7 +102,10 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
 
     addAuditLog('Staff Confirmed', `Transaction ${verifiedData.token_id} authorized by Teller ST-042.`);
 
-    setCompletedReceiptData(verifiedData);
+    // Explicitly strip account_balance — it is bank-internal and must NEVER appear on the customer receipt
+    // eslint-disable-next-line no-unused-vars
+    const { account_balance: _stripped, ...receiptSafeData } = verifiedData;
+    setCompletedReceiptData(receiptSafeData);
     setIsReceiptModalOpen(true);
     setVerificationState('READY');
     setVerifiedData(null);
