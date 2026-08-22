@@ -90,25 +90,6 @@ export async function verifyToken(scannedPayload) {
     const transaction_type = payload.transaction_type;
     const amount = payload.amount !== undefined ? Number(payload.amount) : undefined;
 
-    // Withdrawal guard: reject if requested amount exceeds current account balance
-    if (
-      transaction_type &&
-      transaction_type.toLowerCase() === 'withdraw' &&
-      account_balance !== undefined &&
-      amount !== undefined &&
-      amount > account_balance
-    ) {
-      return {
-        status: 'INSUFFICIENT_FUNDS',
-        message: `Withdrawal amount ${amount} exceeds available balance of ${account_balance}. Transaction blocked.`,
-        token_id,
-        customer_display_name: payload.customer_display_name,
-        transaction_type,
-        amount,
-        account_balance
-      };
-    }
-
     // Default Success Verification
     return {
       status: 'VERIFIED',

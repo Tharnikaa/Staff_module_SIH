@@ -47,17 +47,6 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
       setVerificationState('VERIFIED');
       setLastVerifiedTime(new Date().toLocaleTimeString());
       addAuditLog('Token Verified', `HMAC verified signature for token ${matchingQueue.token_id}`);
-    } else if (result.status === 'INSUFFICIENT_FUNDS') {
-      // Set verified data so VerificationPanel can display balance details
-      setVerifiedData({
-        token_id: result.token_id,
-        customer_display_name: result.customer_display_name,
-        transaction_type: result.transaction_type,
-        amount: result.amount,
-        account_balance: result.account_balance
-      });
-      setVerificationState('INSUFFICIENT_FUNDS');
-      addAuditLog('Withdrawal Blocked', result.message);
     } else {
       setVerificationState(result.status);
       addAuditLog('Verification Failed', result.message || 'Invalid or expired token.');
