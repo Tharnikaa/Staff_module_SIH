@@ -1,11 +1,12 @@
 import React from 'react';
 import { formatCurrency, maskCustomerId, formatDateTime } from '../../utils/formatters';
-import { ShieldCheck, ShieldAlert, CheckCircle2, AlertCircle, Lock, Loader2, ArrowRight, Wallet, Ban, ScanLine } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, AlertCircle, Lock, Loader2, ArrowRight, Wallet, Ban, ScanLine, Trash2 } from 'lucide-react';
 
 export const VerificationPanel = ({ 
   verificationState, // READY, VERIFYING, VERIFIED, INVALID, EXPIRED, ALREADY_USED, INSUFFICIENT_FUNDS
   verifiedData, 
   onConfirmClick,
+  onCancelClick,
   onResetScan
 }) => {
   const isWithdrawal = verifiedData?.transaction_type?.toLowerCase() === 'withdraw';
@@ -272,7 +273,7 @@ export const VerificationPanel = ({
       </div>
 
       {/* Action Footer */}
-      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
         {(verificationState === 'INVALID' || verificationState === 'EXPIRED' || verificationState === 'ALREADY_USED' || verificationState === 'VERIFIED' || verificationState === 'INSUFFICIENT_FUNDS') && (
           <button className="btn btn-secondary" onClick={onResetScan}>
             Scan Again
@@ -280,16 +281,32 @@ export const VerificationPanel = ({
         )}
 
         {verificationState === 'VERIFIED' && (
-          <button
-            className="btn btn-success"
-            onClick={onConfirmClick}
-            disabled={isOverdraft}
-            title={isOverdraft ? 'Cannot confirm: withdrawal amount exceeds available balance' : ''}
-            style={isOverdraft ? { opacity: 0.45, cursor: 'not-allowed' } : {}}
-          >
-            <span>Confirm Transaction</span>
-            <ArrowRight size={16} />
-          </button>
+          <>
+            <button
+              className="btn"
+              onClick={onCancelClick}
+              style={{
+                backgroundColor: '#FEF2F2',
+                color: '#DC2626',
+                border: '1px solid #FCA5A5'
+              }}
+              title="Cancel transaction and permanently invalidate this QR token"
+            >
+              <Trash2 size={16} />
+              <span>Cancel &amp; Delete QR</span>
+            </button>
+
+            <button
+              className="btn btn-success"
+              onClick={onConfirmClick}
+              disabled={isOverdraft}
+              title={isOverdraft ? 'Cannot confirm: withdrawal amount exceeds available balance' : ''}
+              style={isOverdraft ? { opacity: 0.45, cursor: 'not-allowed' } : {}}
+            >
+              <span>Confirm Transaction</span>
+              <ArrowRight size={16} />
+            </button>
+          </>
         )}
       </div>
     </div>

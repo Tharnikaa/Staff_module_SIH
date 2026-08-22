@@ -1,8 +1,8 @@
 import React from 'react';
 import { formatCurrency, maskCustomerId } from '../../utils/formatters';
-import { AlertTriangle, Check, X, Wallet } from 'lucide-react';
+import { AlertTriangle, Check, X, Wallet, Trash2 } from 'lucide-react';
 
-export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onConfirm }) => {
+export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onCancelAndDelete, onConfirm }) => {
   if (!isOpen || !transactionData) return null;
 
   const isWithdrawal = transactionData.transaction_type?.toLowerCase() === 'withdraw';
@@ -93,11 +93,28 @@ export const ConfirmationModal = ({ isOpen, transactionData, onCancel, onConfirm
           </div>
         </div>
 
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary" onClick={onCancel}>
             <X size={16} />
-            <span>Cancel</span>
+            <span>Close Window</span>
           </button>
+
+          {onCancelAndDelete && (
+            <button
+              className="btn"
+              onClick={onCancelAndDelete}
+              style={{
+                backgroundColor: '#FEF2F2',
+                color: '#DC2626',
+                border: '1px solid #FCA5A5'
+              }}
+              title="Cancel transaction and permanently delete/invalidate this QR token"
+            >
+              <Trash2 size={16} />
+              <span>Cancel &amp; Delete QR</span>
+            </button>
+          )}
+
           <button className="btn btn-success" onClick={onConfirm}>
             <Check size={16} />
             <span>Confirm &amp; Complete</span>

@@ -103,6 +103,29 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
     setVerifiedData(null);
   };
 
+  const handleCancelAndInvalidateTransaction = async () => {
+    if (!verifiedData) return;
+
+    const cancelledTokenId = verifiedData.token_id;
+
+    // 1. Mark token as spent/cancelled in sessionStorage registry so scanning it again shows ALREADY_USED
+    markTokenUsed(verifiedData);
+
+    // 2. Add Audit log entry
+    addAuditLog('Transaction Cancelled', `Transaction ${cancelledTokenId} cancelled by teller ST-042. QR token permanently deleted & invalidated.`);
+
+    // 3. Emit Dev Event / WS event so queue entry is removed/expired
+    await wsClient.emitDevEvent({
+      event: 'token_expired',
+      token_id: cancelledTokenId
+    });
+
+    // 4. Reset Verification Panel state to READY
+    setIsConfirmModalOpen(false);
+    setVerificationState('READY');
+    setVerifiedData(null);
+  };
+
   return (
     <div>
       <QueueCalledAlert onProceedToVerification={handleSelectFromQueueAlert} />
@@ -117,6 +140,7 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
           verificationState={verificationState}
           verifiedData={verifiedData}
           onConfirmClick={() => setIsConfirmModalOpen(true)}
+          onCancelClick={handleCancelAndInvalidateTransaction}
           onResetScan={() => {
             setVerificationState('READY');
             setVerifiedData(null);
@@ -133,6 +157,7 @@ export const VerificationPage = ({ simulatedQrPayload }) => {
         isOpen={isConfirmModalOpen}
         transactionData={verifiedData}
         onCancel={() => setIsConfirmModalOpen(false)}
+        onCancelAndDelete={handleCancelAndInvalidateTransaction}
         onConfirm={handleConfirmTransaction}
       />
 
